@@ -46,8 +46,7 @@ jobs:
         run: |
           cargo install just
           cargo install \
-              --git https://github.com/EmmyLuaLs/emmylua-analyzer-rust.git \
-              --rev dfe51ccf0a92be4219cb0738943ec8059751b072 \
+              --git https://github.com/bkoropoff/emmylua-analyzer-rust.git \
               emmylua_doc_cli
           find ~/.cargo/.crates.toml ~/.cargo/.crates2.json ~/.cargo/bin/ ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/ ~/.rustup -type f -print0 | xargs -0 md5sum > rust-hash
           echo RUST_HASH=`md5sum rust-hash | cut -d' ' -f 1` >> "$GITHUB_ENV"
@@ -87,7 +86,7 @@ jobs:
           uv venv ~/.venv
           uv pip install \
               sphinx sphinx-rtd-theme myst-parser \
-              'sphinx-lua-ls @ git+https://github.com/taminomara/sphinx-lua-ls@39c65e3db736e0b75bd683d73a373815b539ccc6'
+              'sphinx-lua-ls @ git+https://github.com/bkoropoff/sphinx-lua-ls'
           find ~/.local/bin/uv ~/.local/share/uv ~/.cache/uv ~/.venv -type f ! -name '_sysconfigdata*.pyc' ! -path '*/interpreter-v4/*.msgpack' -print0 | xargs -0 md5sum > python-hash
           echo PYTHON_HASH=`md5sum python-hash | cut -d' ' -f 1` >> "$GITHUB_ENV"
 
