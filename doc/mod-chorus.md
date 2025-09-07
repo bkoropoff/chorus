@@ -44,7 +44,8 @@ require 'chorus'.setup {
   -- Override variables that will be added to config file environment without
   -- being explicitly `require`d. Defaults to `chorus` and `chorus.*`
   prelude = {
-     chorus = require 'chorus'
+     chorus = require 'chorus',
+     keymap = require 'chorus.keymap'
   }
 }
 ```
