@@ -16,7 +16,7 @@ local util = require 'chorus.util'
 --- 2. `<key> = { <method> = { <value> ...}, ... }`: Performs
 --- `vim.opt.<key>:<method>{ <value> ... }...` (multiple methods possible at once)
 
-special_map = {
+local special_map = {
   set = function(k, _, v) vim.opt[k] = v end,
   prepend = function(_, o, v) o:prepend(v) end,
   append = function(_, o, v) o:append(v) end,
