@@ -2,19 +2,21 @@ local M = {}
 local util = require 'chorus.util'
 
 --- @class chorus.opt.Method Option method
---- @field set? any Just sets the option
---- @field prepend? any Prepends to the option
+--- @field set? any Just set the option
+--- @field prepend? any Prepend to the option
 --- @field append? any Append to the option
---- @field remove? any Removes from the option
+--- @field remove? any Remove from the option
 
 --- @class chorus.opt.Spec Option spec
 --- @field buffer? boolean | integer Set options locally in the given buffer;
 --- `0` or `true` means the current buffer.  This mode uses `vim.bo` and doesn't
 --- support methods as detailed below.
---- @field [string] any | chorus.opt.Method Options settings
+--- @field [string] any | chorus.opt.Method Options
 --- 1. `<key> = <value>`: Performs `vim.opt.<key> = <value>`
 --- 2. `<key> = { <method> = { <value> ...}, ... }`: Performs
---- `vim.opt.<key>:<method>{ <value> ... }...` (multiple methods possible at once)
+--- `vim.opt.<key>:<method>{ <value> ... }...`
+--- 3. `<key> = { set = <value>, ...}`: Performs `vim.opt.<key> = <value>`
+--- (alternate syntax)
 
 local special_map = {
   set = function(k, _, v) vim.opt[k] = v end,
