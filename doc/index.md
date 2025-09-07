@@ -5,6 +5,11 @@ your configuration as self-contained files that declare what packages they
 require; Chorus executes them "simultaneously" as coroutines and installs
 packages as efficient batches with `vim.pack`.
 
+```{note}
+`vim.pack` will only become officially available in Neovim 0.12, so a nightly
+build is currently necessary.
+```
+
 ## Getting Started
 
 To set up Chorus, add it to your `init.lua`:
@@ -17,6 +22,23 @@ require 'chorus'.setup {
   sources = 'config/*.lua',
 }
 ```
+
+A configuration file is ordinary Lua, but should declare which packages it
+uses up front with [`chorus`](mod-chorus), e.g.:
+
+`config/lualine.lua`:
+```lua
+chorus {
+  'nvim-lualine/lualine.nvim',
+  'nvim-tree/nvim-web-devicons',
+}
+
+require 'lualine'.setup {
+  ...
+}
+
+```
+
 See [Configuration](mod-chorus) for details.
 
 ## Updating
