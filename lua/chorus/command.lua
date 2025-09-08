@@ -52,7 +52,7 @@ local ops = {
 function command(args)
   fargs = args.fargs
   op = table.remove(fargs, 1)
-  func = ops[op]
+  local func = ops[op]
   if not func then
     vim.notify("No such operation: " .. op, vim.log.levels.ERROR)
     return
