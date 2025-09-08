@@ -103,11 +103,11 @@ jobs:
       - name: Generate documentation
         run: just doc
 
-      # - name: Upload hash files
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: hashes
-      #     path: '*-hash'
+      - name: Upload hash files
+        uses: actions/upload-artifact@v4
+        with:
+          name: hashes
+          path: '*-hash'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
