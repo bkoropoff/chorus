@@ -86,7 +86,7 @@ jobs:
           uv venv ~/.venv
           uv pip install \
               sphinx sphinx-rtd-theme myst-parser \
-              'sphinx-lua-ls @ git+https://github.com/bkoropoff/sphinx-lua-ls'
+              'sphinx-lua-ls @ git+https://github.com/taminomara/sphinx-lua-ls'
           find ~/.local/bin/uv ~/.local/share/uv ~/.cache/uv ~/.venv -type f ! -name '_sysconfigdata*.pyc' ! -path '*/interpreter-v4/*.msgpack' -print0 | xargs -0 md5sum > python-hash
           echo PYTHON_HASH=`md5sum python-hash | cut -d' ' -f 1` >> "$GITHUB_ENV"
 
