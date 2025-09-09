@@ -1,7 +1,7 @@
 local M = {}
 local util = require 'chorus.util'
 local shada = require 'chorus.shada'
-local Spin = require 'chorus.job'.Spin
+local job = require 'chorus.job'
 
 --- @class (partial) chorus.pack.Pack: chorus.util.Object
 --- @field name string
@@ -215,12 +215,15 @@ function M.Pack:setup()
     error("duplicate setup")
   end
   self._setup_start = true
-  return Spin:new(function()
+  return job.Job:new(function()
+    job.pend(job.PendKind.DEPEND, function() return self:depends_ready() end)
     if self._build and not self._build_run then
-      self._build(self)
+      --- @async
+      job.spin(function() return self._build(self) end)
       self._build_run = true
     end
     if self._setup and not self._setup_run then
+      job.spin(self._setup)
       self._setup()
       self._setup_run = true
     end
@@ -235,19 +238,17 @@ function M.Pack:setup()
   })
 end
 
+function M.Pack:depends_ready()
+  return vim.iter(self.depends):all(function (_, d) return d:ready() end)
+end
+
 function M.Pack:ready()
   if self.error then
     return true
   end
 
-  for _, dep in pairs(self.depends) do
-    if dep.error then
-      self.error = dep.error
-      return true
-    end
-    if not dep:ready() then
-      return false
-    end
+  if not self:depends_ready() then
+    return false
   end
 
   if not self.added or self:needs_setup() then

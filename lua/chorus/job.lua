@@ -75,6 +75,9 @@ end
 --- @param pred fun():boolean
 --- @return any ...
 function M.pend(kind, pred, ...)
+  if kind ~= M.PendKind.SPIN and pred() then
+    return
+  end
   local self = jobs[coroutine.running()]
   self._pred = pred
   self._pend = kind
@@ -87,7 +90,7 @@ end
 
 --- @return boolean ok
 --- @return any res
---- @return string|nil tb
+--- @return string? tb
 function M.Job:__call(...)
   local _, ok, res, tb = coroutine.resume(self._cr, true, {...})
   return ok, res, tb
@@ -95,37 +98,31 @@ end
 
 --- @return boolean ok
 --- @return any res
---- @return string|nil tb
+--- @return string? tb
 function M.Job:error(err)
   local _, ok, res, tb = coroutine.resume(self._cr, false, err)
   return ok, res, tb
 end
 
---- @class chorus.job.Spin: chorus.job.Job
----
---- A Job subclass that expects the main function to just spin calling
---- `coroutine.yield` with a status string, compatible with lazy.nvim's `build
---- = function() ... end` mechanism
-M.Spin = util.class(M.Job)
-
---- @return self
-function M.Spin:new(func, opts)
-  return M.Job.new(self, func, opts)
-end
-
-function M.Spin:__call()
-  local ok, res, tb = coroutine.resume(self._cr)
-  if not self.done then
-    if ok and type(res) == 'string' then
-      util.notify(self.name .. ": " .. res)
+--- Run a function that spins with `coroutine.yield(message)`
+--- @async
+--- @param func function
+--- @param name? string
+--- @return any
+function M.spin(func, name)
+  local DONE = {}
+  name = name or jobs[coroutine.running()].name
+  local cr = coroutine.wrap(function() return DONE, func() end)
+  while true do
+    local status, res = cr()
+    if status == DONE then
+      return res
+    elseif type(status) == 'string' then
+      util.notify((name and (name .. ": ") or ""))
     end
-    self._pend = M.State.SPIN
+    M.pend(M.PendKind.SPIN, function() return true end)
   end
-  return ok, res, tb
-end
-
-function M.Spin:error(err)
-  return false, err, debug.traceback(self._cr)
+  return nil
 end
 
 return M
