@@ -46,7 +46,7 @@ jobs:
         run: |
           cargo install just
           cargo install \
-              --git https://github.com/bkoropoff/emmylua-analyzer-rust.git \
+              --git https://github.com/EmmyLuaLs/emmylua-analyzer-rust.git \
               emmylua_doc_cli
           find ~/.cargo/.crates.toml ~/.cargo/.crates2.json ~/.cargo/bin/ ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/ ~/.rustup -type f -print0 | xargs -0 md5sum > rust-hash
           echo RUST_HASH=`md5sum rust-hash | cut -d' ' -f 1` >> "$GITHUB_ENV"
