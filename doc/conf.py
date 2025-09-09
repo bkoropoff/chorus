@@ -4,6 +4,7 @@ copyright = "2025 Brian Koropoff"
 version = "0.1.0"
 
 templates_path = ['templates']
+html_static_path = ['static']
 
 extensions = [
     "sphinx_lua_ls",
@@ -11,6 +12,8 @@ extensions = [
 ]
 
 html_theme = "sphinx_rtd_theme"
+
+html_logo = 'chorus.svg'
 
 html_context = {
     'display_github': True,

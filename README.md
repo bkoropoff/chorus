@@ -1,4 +1,6 @@
-# Chorus
+<h1 align="center">
+  <img src="doc/chorus.svg" alt="Chorus Logo" width="300"/>
+</h1>
 
 Chorus is a declarative, modular configuration helper for Neovim. Structure
 your configuration as self-contained files that declare what packages they
