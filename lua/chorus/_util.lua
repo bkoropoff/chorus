@@ -22,8 +22,9 @@ function M.insert_all(tbl, array)
   return tbl
 end
 
---- @param tbl table
---- @return table
+--- @generic T: table
+--- @param tbl T
+--- @return T
 function M.copy(tbl)
   local copy = {}
   for k, v in pairs(tbl) do
@@ -72,6 +73,58 @@ end
 --- @param level vim.log.levels | nil
 function M.notify(msg, level)
   return vim.notify(msg, level)
+end
+
+--- @class chorus.util.GUARD
+--- @package
+local GUARD = {}
+
+--- @class chorus.util.Thunk<T>
+--- @field package func fun(): T
+--- @field package value T | chorus.util.GUARD
+local Thunk = M.class()
+
+--- @generic T
+--- @param func fun(): T
+--- @return chorus.util.Thunk<T>
+function M.delay(func)
+  return setmetatable({
+    func = func,
+    value = GUARD
+  }, Thunk)
+end
+
+--- @generic T
+--- @param thunk chorus.util.Thunk<T>
+--- @return T
+function M.force(thunk)
+  if thunk.value == GUARD then
+    thunk.value = {thunk.func()}
+  end
+  return unpack(thunk.value)
+end
+
+--- @param key any
+--- @return any
+function Thunk:__index(key)
+  return M.force(self)[key]
+end
+
+--- @param key any
+--- @param value any
+function Thunk:__newindex(key, value)
+  M.force(self)[key] = value
+end
+
+--- @param ... any
+--- @return any...
+function Thunk:__call(...)
+  local args = { ... }
+  -- Support indexing for method calls
+  if args[1] == self then
+    args[1] = M.force(self)
+  end
+  return M.force(self)(unpack(args))
 end
 
 return M

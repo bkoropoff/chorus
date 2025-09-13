@@ -1,6 +1,6 @@
 # Keymaps
 
-The `keymap` module declaratively defines key mappings. Nested tables with
+The `chorus.keymap` module declaratively defines key mappings. Nested tables with
 option and prefix inheritance let you create concise configurations, but flat
 syntax (or a combination) is also available if readability is more important.
 
@@ -36,7 +36,3 @@ keymap {
    ["vn <leader>gb"] = "<cmd>Git blame<CR>"
 }
 ```
-
-## Reference
-
-```{lua:autoobject} chorus.keymap

@@ -4,7 +4,6 @@ copyright = "2025 Brian Koropoff"
 version = "0.1.0"
 
 templates_path = ['templates']
-html_static_path = ['static']
 
 extensions = [
     "sphinx_lua_ls",
@@ -24,11 +23,21 @@ html_context = {
 lua_ls_project_root = "../lua"
 lua_ls_backend = "emmylua"
 lua_ls_apidoc_format = "md"
+lua_ls_apidoc_separate_members = True
+
+lua_ls_apidoc_roots = {
+   "chorus": {
+        "path": "api"
+    }
+}
 
 lua_ls_default_options = {
     'members': "",
-    'globals': "",
+    'globals': "_",
     'recursive': "",
-    'inherited-members': "",    # Include inherited members
-    'module-member-order': "groupwise"  # Sort members by name
+    'private-members': "_",
+    'package-members': "_",
+    'protected-members': "_",
+    'inherited-members': "_",
+    'module-member-order': "groupwise"
 }

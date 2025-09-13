@@ -1,7 +1,7 @@
 # Options
 
-The `opt` module defines options declaratively.  It is a very direct wrapper
-around `vim.opt` and `vim.bo`.
+The `chorus.opt` module defines options declaratively.  It is a very direct
+wrapper around `vim.opt` and `vim.bo`.
 
 ## Example
 
@@ -26,7 +26,3 @@ opt {
   bufhidden = 'delete'
 }
 ```
-
-## Reference
-
-```{lua:autoobject} chorus.opt

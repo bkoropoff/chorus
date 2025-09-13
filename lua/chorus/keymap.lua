@@ -1,10 +1,11 @@
-local keymap = {}
-local cspec = require 'chorus.spec'
-local util = require 'chorus.util'
+--- Keymap Support
+local M = {}
+local cspec = require 'chorus._spec'
+local util = require 'chorus._util'
 
 --- Indicates that a mapping should be deleted in a keymap spec
 --- @class chorus.keymap.DELETE
-keymap.DELETE = {}
+M.DELETE = {}
 
 --- Left-hand side in a keymap spec
 ---
@@ -35,10 +36,10 @@ keymap.DELETE = {}
 
 --- Right-hand side in a keymap spec
 ---
---- 1. [An action](chorus.keymap.Action)
---- 3. [`DELETE`](chorus.keymap.DELETE): Indicates mapping should be deleted if it exists
+--- 1. [An action](./chorus.keymap.Action)
+--- 3. [`DELETE`](./chorus.keymap.DELETE): Indicates mapping should be deleted if it exists
 --- 4. `{ <action>, <option> = <value> ... }`: An action plus options
---- 5. [A nested spec](chorus.keymap.Spec) which inherits modes and options and
+--- 5. [A nested spec](./chorus.keymap.Spec) which inherits modes and options and
 --- any key sequence as a prefix
 --- @alias chorus.keymap.Rhs
 --- | chorus.keymap.Action
@@ -85,7 +86,7 @@ keymap.DELETE = {}
 --- @field unique? boolean Unique mapping
 --- @field replace_keycodes? boolean Replace keycodes in return value
 --- @field lhs string Left-hand side of mapping
-keymap.args = {
+M.args = {
   lhs = '',
 }
 
@@ -173,7 +174,7 @@ local function apply(cfg, modes, prefix, defaults)
       goto next
     end
 
-    if rhs == keymap.DELETE then
+    if rhs == M.DELETE then
       for _, sublhs in ipairs(lhs) do
         for _, mode in ipairs(modes) do
           local res, err = pcall(function()
@@ -218,15 +219,13 @@ local function apply(cfg, modes, prefix, defaults)
         local func = subrhs
         local fargs = vim.tbl_extend('force', fopts, { lhs = sublhs })
         subopts.callback = function()
-          local old = keymap.args
-          keymap.args = fargs
+          local old = M.args
+          M.args = fargs
           local res = func()
-          keymap.args = old
+          M.args = old
           return res
         end
         subrhs = ''
-      elseif type(subrhs) ~= 'string' then
-        error("Invalid RHS for '" .. lhs .. "': " .. vim.inspect(rhs))
       end
 
       for _, mode in ipairs(submodes) do
@@ -246,20 +245,21 @@ end
 
 --- Set keymap
 ---
---- Also available by invoking the [`chorus.keymap`](chorus.keymap) module as a function
+--- Also available by invoking [`chorus.keymap`](./chorus.keymap) as a function
+--- (or just `keymap` when using the default prelude)
+---
 --- @param spec chorus.keymap.Spec Keymap spec
---- @param buffer? integer | boolean Overrides `buffer` option in `spec`
 --- @return chorus.keymap.ID ... ids All created mappings
-function keymap.set(spec, buffer)
-  local defaults = { noremap = true, buffer = buffer }
+function M.set(spec)
+  local defaults = { noremap = true }
   return unpack(apply(spec, nil, '', defaults))
 end
 
 --- Delete mappings
 ---
---- Deletes one or more mapping previously created with [`chorus.keymap[.set]`](chorus.keymap.set)
+--- Deletes one or more mapping previously created with [`chorus.keymap[.set]`](./chorus.keymap.set)
 --- @param ... chorus.keymap.ID Identifier mappings
-function keymap.delete(...)
+function M.delete(...)
   for _, id in ipairs { ... } do
     local mode, lhs, buffer = unpack(id)
     if buffer then
@@ -271,9 +271,9 @@ function keymap.delete(...)
 end
 
 local mt = {
-  __call = function(_, tbl) return keymap.set(tbl) end
+  __call = function(_, spec) return M.set(spec) end
 }
 
-setmetatable(keymap, mt)
+setmetatable(M, mt)
 
-return keymap
+return M
