@@ -1,6 +1,5 @@
+--- LSP Support
 local M = {}
-local keymap = require 'chorus.keymap'
-local util = require 'chorus.util'
 
 --- LSP settings for a particular language server
 ---
@@ -15,29 +14,122 @@ local util = require 'chorus.util'
 --- @field common? chorus.lsp.Subconfig Common settings for all language servers in this table
 --- @field [string] chorus.lsp.Subconfig Settings for particular language servers
 
+--- @param common? function | function[]
+--- @param specific? function | function[]
+--- @return function[]
 local function chain(common, specific)
+  return vim.iter { common, specific }:flatten():totable()
+end
+
+--- @param funcs? function[]
+--- @return function?
+local function combine(funcs)
+  if not funcs or #funcs == 0 then
+    return nil
+  end
   return function(...)
-    common(...)
-    specific(...)
+    for _, func in ipairs(funcs) do
+      func(...)
+    end
   end
 end
 
+--- @param map chorus.keymap.Spec
+--- @return fun(any, integer)
 local function apply_keymap(map)
   return function(_, bufnr)
-    keymap.set(map, bufnr)
+    require 'chorus.keymap'.set(
+      vim.tbl_extend('keep', map, { buffer = bufnr }) --[[@as chorus.keymap.Spec]]
+    )
   end
 end
 
 --- @type chorus.lsp.Subconfig
-local global = vim.lsp.config['*'] or {}
+local global = {}
 --- @type { [string]: chorus.lsp.Subconfig }
 local specific = {}
 
+--- @type string[]
 local cb_names = {'before_init', 'on_attach', 'on_init', 'on_exit', 'on_error'}
+
+--- @param final boolean
+--- @param ... chorus.lsp.Subconfig
+local function merge(final, ...)
+  local cfgs = { ... }
+  if final then
+    local last = cfgs[#cfgs]
+    if last and last.inherit == false then
+      cfgs = {last}
+      --- @cast cfgs chorus.lsp.Subconfig[]
+    end
+  end
+
+  local merged = vim.tbl_deep_extend(
+    'force', unpack(cfgs) --[[@as chorus.lsp.Subconfig]]
+  )
+  --- @cast merged chorus.lsp.Subconfig
+  for _, name in ipairs(cb_names) do
+    --- @type function[]?
+    local cbs
+    for _, src in ipairs(cfgs) do
+      if name == 'on_attach' and src.keymap then
+        cbs = chain(cbs, apply_keymap(src.keymap))
+      end
+      cbs = chain(cbs, src[name])
+    end
+    if final then
+      merged[name] = combine(cbs)
+    else
+      merged[name] = cbs
+    end
+  end
+  merged.keymap = nil
+  if final then
+    merged.inherit = nil
+  end
+  return merged
+end
+
+--- @param args vim.api.keyset.create_autocmd.callback_args
+local function on_filetype(args)
+  if not args.match or #args.match == 0 then
+      return
+  end
+
+  local chorus = require 'chorus'
+  if chorus.did_setup then
+    -- Only do this if this module isn't being used a la carte
+    chorus.setup( function()
+        chorus { 'neovim/nvim-lspconfig' }
+    end)
+  end
+
+  local cfgs = {}
+
+  for k, v in pairs(specific) do
+    local base = vim.lsp.config[k]
+    local ftypes = base.filetypes or v.filetypes
+    if vim.tbl_contains(ftypes, args.match) then
+      local cfg = merge(true, base, global, v)
+      if not cfg.root_dir and cfg.root_markers then
+        cfg.root_dir = vim.fs.root(args.buf, cfg.root_markers)
+      end
+      cfgs[k] = cfg
+    end
+  end
+
+  for k, v in pairs(cfgs) do
+    vim.lsp.config[k] = v
+    vim.lsp.start(v, { bufnr = args.buf })
+  end
+end
+
+local did_fork = false
 
 --- Configure LSP settings
 ---
---- Also available by invoking the [`lsp`](chorus.lsp) module as a function.
+--- Also available by invoking [`chorus.lsp`](./chorus.lsp) as a function (or
+--- just `lsp` when using the default prelude).
 ---
 --- May be called multiple times to configure different servers.  Providing the
 --- same server or the `global` key more than once replaces the prior settings
@@ -58,85 +150,35 @@ local cb_names = {'before_init', 'on_attach', 'on_init', 'on_exit', 'on_error'}
 ---
 --- @param config chorus.lsp.Config Configuration
 function M.setup(config)
-  --- @type chorus.lsp.Subconfig
-  local common = util.copy(config.common or {})
-  --- @type chorus.lsp.Subconfig
-  local globl = util.copy(config.global or {})
+  require 'chorus.autocmd' {
+    group = 'chorus.lsp.enable',
+    event = 'FileType',
+    desc = "Chorus LSP support",
+    on_filetype
+  }
 
-  for _, special in ipairs { common, globl } do
-    if special.keymap then
-      if special.on_attach then
-        special.on_attach = chain(special.on_attach, apply_keymap(special.keymap))
-      else
-        special.on_attach = apply_keymap(special.keymap)
-      end
-      special.keymap = nil
-    end
-  end
-
-  global = globl
+  local common = config.common or {}
+  global = merge(false, global, config.global or {})
 
   for k, v in pairs(config) do
     --- @cast k +string
     if k ~= 'common' and k ~= 'global' and k ~= 'keymap' then
-      --- @cast v -chorus.keymap.Spec
-      local merge = vim.tbl_deep_extend('force', common, v)
-      for _, name in ipairs(cb_names) do
-        local composed = nil
-        for _, src in ipairs { common, v } do
-          local func = src[name]
-          --- @cast func function?
-          if func then
-            if composed then
-              composed = chain(composed, func)
-            else
-              composed = func
-            end
-          end
-        end
-        if composed then
-          merge[name] = composed
-        end
-      end
-      specific[k] = merge
+      specific[k] = merge(false, common, v)
     end
   end
-end
 
-function M.apply()
-  for k, v in pairs(specific) do
-    if v.inherit == nil or v.inherit then
-      local base = vim.lsp.config[k] or {}
-      --- @type chorus.lsp.Subconfig
-      local merge = vim.tbl_deep_extend('force', base, global, v)
-      merge.keymap = nil
-      merge.inherit = nil
-      for _, name in ipairs(cb_names) do
-        --- @type function?
-        local composed = nil
-        for _, src in ipairs { base, global, v } do
-          local func = src[name]
-          if func then
-            if composed then
-              composed = chain(composed, func)
-            else
-              composed = func
-            end
-          end
-        end
-        if composed then
-          merge[name] = composed
-        end
-      end
-      v = merge
-    else
-      v = util.copy(v)
-      v.keymap = nil
-      v.inherit = nil
+  vim.api.nvim_exec_autocmds("FileType", { group = "chorus.lsp.enable" })
+
+  -- Ensure lspconfig is installed by a lazy task on flush
+  if not did_fork then
+    local chorus = require 'chorus'
+    if chorus.in_setup then
+      chorus.fork(function()
+        chorus.lazy()
+        chorus { 'neovim/nvim-lspconfig' }
+      end)
+      did_fork = true
     end
-    --- @cast v vim.lsp.Config
-    vim.lsp.config[k] = v
-    vim.lsp.enable(k)
   end
 end
 

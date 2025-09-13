@@ -20,20 +20,18 @@ function update(fargs)
       end
       autocmd.delete(id)
       autocmd {
-        {
-          buffer = args.buf,
-          'BufWriteCmd',
-          function()
-            vim.cmd.quit()
-            vim.notify("Restart Neovim to apply updates", vim.log.levels.INFO)
-          end
-        },
-        {
-          group = 'chorus.finish',
-          clear = true,
-          'VimLeavePre',
-          cb
-        }
+        buffer = args.buf,
+        'BufWriteCmd',
+        function()
+          autocmd
+          {
+            group = 'chorus.finish',
+            'VimLeavePre',
+            cb
+          }
+          vim.cmd.quit()
+          vim.notify("Restart Neovim to apply updates", vim.log.levels.INFO)
+        end
       }
     end
   }
@@ -45,8 +43,31 @@ function update(fargs)
   end
 end
 
+local function prune(fargs)
+  -- Ensure all lazy tasks are done so we have a full accounting of active
+  -- packages used by the configuration
+  require 'chorus'._flush()
+
+  local inactive = {}
+
+  for _, pack in ipairs(vim.pack.get(nil, { info = false })) do
+    if not pack.active then
+      table.insert(inactive, pack.spec.name)
+    end
+  end
+
+  vim.pack.del(inactive)
+end
+
+local function sync(fargs)
+  prune(fargs)
+  update(fargs)
+end
+
 local ops = {
-  update = update
+  update = update,
+  prune = prune,
+  sync = sync
 }
 
 function command(args)

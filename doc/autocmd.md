@@ -1,7 +1,7 @@
 # Autocommands
 
-The `autocmd` module defines autocommands and groups declaratively, with nested
-syntax allowing common options to apply to multiple autocommands.
+The `chorus.autocmd` module defines autocommands and groups declaratively, with
+nested syntax allowing common options to apply to multiple autocommands.
 
 ## Examples
 
@@ -78,10 +78,4 @@ local id = autocmd {
   function() print("About to save a .tmp file") end
 }
 autocmd.delete(id)
-```
-
-## Reference
-
-```{lua:autoobject} chorus.autocmd
-
 ```

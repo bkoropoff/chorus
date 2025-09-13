@@ -1,5 +1,6 @@
+-- Option Support
 local M = {}
-local util = require 'chorus.util'
+local util = require 'chorus._util'
 
 --- @class chorus.opt.Method Option method
 --- @field set? any Just set the option
@@ -27,10 +28,11 @@ local special_map = {
 
 --- Set options
 ---
---- Also available by invoking the [`opt`](chorus.opt) module as a function.
+--- Also available by invoking [`chorus.opt`](./chorus.opt) as a function
+--- (or just `opt` when using the default prelude)
 ---
 --- @param opts chorus.opt.Spec Options to set
-function M.set(opts) 
+function M.set(opts)
   local buffer = opts.buffer
   if buffer == 'true' or 'buffer' == 0 then
     buffer = vim.api.nvim_get_current_buf()

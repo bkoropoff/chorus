@@ -1,7 +1,8 @@
-local cspec = require 'chorus.spec'
-local util = require 'chorus.util'
-
+-- User Command Support
 local M = {}
+
+local cspec = require 'chorus._spec'
+local util = require 'chorus._util'
 
 --- User command function
 ---
@@ -66,18 +67,23 @@ local option_spec = cspec.compile {
   desc = 'string',
   force = 'boolean',
   preview = 'callable',
-  [cspec.ARGS] = {'string', 'table', 'callable'},
+  [cspec.ARGS] = {'string', 'callable', 'table'},
   [cspec.CONFIG] = {
     allow_unknown_options = true
   }
 }
 
+--- @param spec chorus.usercmd.Spec
+--- @param defaults? { [string]: any }
+--- @return chorus.usercmd.ID[]
 local function apply(spec, defaults)
   local opts, args, rest = option_spec:parse(spec, defaults)
 
   if not vim.tbl_isempty(rest) then
     local result = {}
     for k, v in pairs(rest) do
+      --- @cast k string
+      --- @cast v chorus.usercmd.Spec
       v = util.copy(v)
       table.insert(v, 1, k)
       for _, id in ipairs(apply(v, opts)) do
@@ -93,6 +99,10 @@ local function apply(spec, defaults)
     local buffer = opts.buffer
     opts.buffer = nil
     if buffer == nil then
+      if vim.is_callable(command) and type(command) ~= 'function' then
+        local inner = command
+        command = function(...) return inner(...) end
+      end
       vim.api.nvim_create_user_command(name, command, opts)
     else
       vim.api.nvim_buf_create_user_command(buffer, name, command, opts)
@@ -100,21 +110,22 @@ local function apply(spec, defaults)
     return {{name, buffer == 0 and vim.api.nvim_get_current_buf() or buffer}}
   end
 
+  local result = {}
   for _, subtbl in ipairs(args) do
-    local result = {}
     for _, id in ipairs(apply(subtbl, opts)) do
       table.insert(result, id)
     end
-    return result
   end
+  return result
 end
 
 --- Create user commands
 ---
---- Also available by invoking [`usercmd`](chorus.usercmd) module as a function.
+--- Also available by invoking [`chorus.usercmd`](./chorus.usercmd) as a
+--- function (or just `usercmd` when using the default prelude)
 ---
 --- @param spec chorus.usercmd.Spec The specification
---- @return chorus.usercmd.ID ... ids IDs of created commands
+--- @return chorus.usercmd.ID? ... ids IDs of created commands
 function M.create(spec)
   return unpack(apply(spec))
 end

@@ -1,8 +1,27 @@
 local M = {}
 
+local util = require 'chorus._util'
+
+--- @class chorus.spec.CONFIG
 M.CONFIG = {}
+--- @class chorus.spec.ARGS
 M.ARGS = {}
 
+--- @alias chorus.spec.TypeErr { [1]: string, [2]: any }
+--- @alias chorus.spec.Verify fun(any): (boolean, any | chorus.spec.TypeErr)
+--- @alias chorus.spec.Type string | chorus.spec.Verify | chorus.spec.Type[]
+
+--- @class chorus.spec.Config
+--- @field allow_unknown_elements? boolean
+--- @field inherit? chorus.spec.Compiled
+
+--- @class chorus.spec.Spec
+--- @field [string] chorus.spec.Type?
+--- @field [chorus.spec.CONFIG] chorus.spec.Config?
+--- @field [chorus.spec.ARGS] chorus.spec.Type?
+
+--- @param ty string
+--- @return chorus.spec.Verify
 local function verify_type(ty)
   if ty == 'array' then
     return function(obj)
@@ -40,6 +59,8 @@ local function verify_type(ty)
   end
 end
 
+--- @param tbl chorus.spec.Verify[]
+--- @return chorus.spec.Verify
 local function verify_alternates(tbl)
   return function(obj)
     local errs = {}
@@ -67,16 +88,21 @@ local function verify_alternates(tbl)
   end
 end
 
+--- @param obj chorus.spec.Type
+--- @return chorus.spec.Verify
 local function compile_verifier(obj)
-  if vim.is_callable(obj) then
-    return obj
-  elseif vim.isarray(obj) then
-    return verify_alternates(vim.tbl_map(compile_verifier, obj))
-  elseif type(obj) == 'string' then
+  if type(obj) == 'string' then
     return verify_type(obj)
-  else
-    error("expected callable, array, or string: " .. vim.inspect(obj))
   end
+  if vim.is_callable(obj) then
+    --- @cast obj -chorus.spec.Type[]
+    return obj
+  end
+  --- @cast obj -chorus.spec.Verify
+  if vim.isarray(obj) then
+    return verify_alternates(vim.tbl_map(compile_verifier, obj))
+  end
+  error("expected callable, array, or string: " .. vim.inspect(obj))
 end
 
 function M.array(inner)
@@ -96,6 +122,8 @@ function M.array(inner)
   end
 end
 
+--- @param tbl { key: any, value: chorus.spec.Type }
+--- @return chorus.spec.Verify
 function M.table(tbl)
   local key = compile_verifier(tbl.key)
   local value = compile_verifier(tbl.value)
@@ -118,19 +146,28 @@ function M.table(tbl)
   end
 end
 
+--- @class chorus.spec.DATA
+--- @package
 local DATA = {}
 
-local Spec = {}
-Spec.__index = Spec
+--- @class chorus.spec.Compiled
+--- @field private [chorus.spec.DATA] table
+--- @field private [chorus.spec.CONFIG] table
+--- @field private [chorus.spec.ARGS] table
+local Compiled = util.class()
 
-function M.compile(spec_tbl)
+--- @param spec chorus.spec.Spec
+--- @return chorus.spec.Compiled
+function M.compile(spec)
   local data = {}
   --- @type table?
   local cfg = nil
-  for k, v in pairs(spec_tbl) do
+  for k, v in pairs(spec) do
     if k == M.CONFIG then
+      --- @cast v chorus.spec.Config
       cfg = v
     else
+      --- @cast v -chorus.spec.Config
       data[k] = compile_verifier(v)
     end
   end
@@ -141,10 +178,15 @@ function M.compile(spec_tbl)
     end
     data[M.CONFIG] = cfg
   end
-  return setmetatable({ [DATA] = data }, Spec)
+  return setmetatable({ [DATA] = data }, Compiled)
 end
 
-function Spec:parse(tbl, defaults)
+--- @param tbl { [string]: any, [integer]: any }
+--- @param defaults? { [string]: any }
+--- @return { [string]: any }
+--- @return any[]
+--- @return { [string]: any }
+function Compiled:parse(tbl, defaults)
   tbl = vim.tbl_extend("keep", tbl, defaults or {})
   local opts = {}
   local args = {}
@@ -187,6 +229,9 @@ function Spec:parse(tbl, defaults)
   return opts, args, rest
 end
 
+--- @param buffer any
+--- @return bool
+--- @return any | chorus.spec.TypeErr
 function M.buffer(buffer)
   if type(buffer) == 'number' then
     return true, buffer

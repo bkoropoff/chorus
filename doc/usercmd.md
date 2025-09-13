@@ -1,6 +1,6 @@
 # User Commands
 
-The `usercmd` module defines user commands declaratively.
+The `chorus.usercmd` module defines user commands declaratively.
 
 ## Example
 
@@ -35,7 +35,3 @@ usercmd {
    end
 }
 ```
-
-## Reference
-
-```{lua:autoobject} chorus.usercmd

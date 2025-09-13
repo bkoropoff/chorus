@@ -17,16 +17,13 @@ To set up Chorus, add it to your `init.lua`:
 ```lua
 vim.pack.add({ 'https://github.com/bkoropoff/chorus' }, { confirm = false })
 
-require 'chorus'.setup {
-  -- Drop configuration files in `config/` in your Neovim config directory
-  sources = 'config/*.lua',
-}
+-- Drop configuration files in `config/` in your Neovim config directory
+require 'chorus'.setup "config/*.lua"
 ```
 
 A configuration file is ordinary Lua, but should declare which packages it
-uses up front with [`chorus`](mod-chorus), e.g.:
+uses up front with [`chorus`](chorus.use), e.g. `config/lualine.lua`:
 
-`config/lualine.lua`:
 ```lua
 chorus {
   'nvim-lualine/lualine.nvim',
@@ -39,22 +36,49 @@ require 'lualine'.setup {
 
 ```
 
-See [Configuration](mod-chorus) for details.
+See [Configuration](config) for details.
 
 ## Updating
 
-To update packages, run `:Chorus update`.  Accept the update with `:write` or
-dismiss it with `:quit`. This uses `vim.pack.update`, but defers the actual
-checkout of git repositories until Neovim exits to avoid disrupting running
-packages.
+To update packages, run:
+
+```
+:Chorus update
+```
+
+Accept the update with `:write` or dismiss it with `:quit`. This uses
+`vim.pack.update`, but defers the actual checkout of git repositories until
+Neovim exits to avoid disrupting running packages.
+
+## Removing Unused Packages
+
+To remove packages that aren't used, run:
+
+```
+:Chorus prune
+```
+
+This will implictly finish any configuration sources that have deferred
+completion so that all packages that might be used by your configuration are
+known.
+
+
+## Syncing
+
+To prune and update packages in one go:
+
+```
+:Chorus sync
+```
 
 ```{toctree}
 :maxdepth: 2
 :caption: Contents
 
-mod-chorus
-mod-chorus.opt
-mod-chorus.keymap
-mod-chorus.autocmd
-mod-chorus.usercmd
-mod-chorus.lsp
+config
+opt
+keymap
+autocmd
+usercmd
+filetype
+api/index

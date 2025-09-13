@@ -1,10 +1,11 @@
 local M = {}
-local util = require 'chorus.util'
-local shada = require 'chorus.shada'
-local job = require 'chorus.job'
+local util = require 'chorus._util'
+local shada = require 'chorus._shada'
+local async = require 'chorus._async'
 
 --- @class (partial) chorus.pack.Pack: chorus.util.Object
 --- @field name string
+--- @field add boolean
 --- @field added boolean
 --- @field scheduled boolean
 --- @field version? string
@@ -99,12 +100,23 @@ function M.Pack:resolve(spec_or_url)
     inst.name = spec.name or guess
     pack_by_name[inst.name] = inst
     inst.added = false
+    inst.add = false
+    inst.depends = {}
     inst._setup_run = false
     inst._setup_start = false
   end
 
-  inst.version = inst.version or spec.version or spec.branch
-  inst.depends = inst.depends or {}
+  if spec.add ~= false then
+    inst.add = true
+  end
+
+  if spec.version or spec.branch then
+    if inst.version then
+      error(inst.name .. ": version/branch conflict")
+    end
+    inst.version = inst.version or spec.version or spec.branch
+  end
+
   local deps_or_url = spec.dependencies or {}
   local deps
   if type(deps_or_url) ~= 'table' or not vim.isarray(deps_or_url) then
@@ -136,7 +148,7 @@ function M.Pack:resolve(spec_or_url)
   end
   if setup then
     if inst._setup then
-      error(inst.name .. ": ['setup'] conflict")
+      error(inst.name .. ": setup conflict")
     end
     inst._setup = setup
   end
@@ -172,7 +184,7 @@ function M.Pack:resolve(spec_or_url)
   end
   if build then
     if inst._build then
-      error(inst.name .. ": ['build'] conflict")
+      error(inst.name .. ": build conflict")
     end
     inst._build = build
   end
@@ -199,7 +211,8 @@ function M.Pack:changed(event, arg)
     pack_by_url[self.url] = nil
   end
 
-  if vim.v.vim_did_enter == 1 then
+  if require 'chorus'.did_setup then
+    -- The first setup will flush shada in one go
     vim.schedule(function() shada.flush(true) end)
   end
 end
@@ -210,28 +223,31 @@ function M.Pack:needs_setup()
     (self._setup and not self._setup_run)
 end
 
-function M.Pack:setup()
+--- @param reactor chorus.async.Reactor
+--- @return chorus.async.Task
+function M.Pack:setup(reactor)
   if self._setup_start then
     error("duplicate setup")
   end
   self._setup_start = true
-  return job.Job:new(function()
-    job.pend(job.PendKind.DEPEND, function() return self:depends_ready() end)
+  --- @async
+  return reactor:task(function()
+    async.pend(function() return self:depends_ready() and async.State.RUN or async.State.DEPEND end)
     if self._build and not self._build_run then
       --- @async
-      job.spin(function() return self._build(self) end)
+      async.spin(function() return self._build(self) end)
       self._build_run = true
     end
     if self._setup and not self._setup_run then
-      job.spin(self._setup)
+      async.spin(self._setup)
       self._setup()
       self._setup_run = true
     end
   end, {
     name = self.name,
-    on_done = function(ok)
+    on_done = function(task)
       self._setup_start = false
-      if not ok then
+      if not task.ok then
         self.error = "build or setup failed"
       end
     end
