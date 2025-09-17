@@ -118,12 +118,12 @@ leverage them.
 
 ### Lazy Imports and Configuration
 
-[`chorus.lazy`](chorus.lazy) allows lazily importing Lua modules, as well as
-designating a portion of a configuration file as lazily executed. The
-configuration file is suspended at that point until a lazily imported module is
-first accessed (e.g. from a keymap), at which point execution resumes, the lazy
-import is resolved, and whatever triggers it continues on.  This can go as far
-as installing packages on the fly for the first time.
+[`chorus.lazy`](chorus.lazy) allows lazily importing Lua modules or computing
+values, as well as designating a portion of a configuration file as lazily
+executed. The configuration file is suspended at that point until a lazy import
+or value is accessed (e.g. from a keymap), at which point execution resumes,
+the lazy import or value is resolved, and whatever triggered it continues on.
+This can go as far as installing packages on the fly.
 
 #### Example: `config/neo-tree.lua`
 ```lua
@@ -170,11 +170,14 @@ chorus {
   },
 }
 ```
+
 ### Filetypes
 
-Using [`chorus.filetype`](chorus.filetype), you can suspend a configuration file
-until the first time one of the specified file types is loaded, at which point
-execution resumes to perform one-time configuration.
+Using [`chorus.filetype`](filetype), you can suspend a configuration file until
+the one of the specified file types is first loaded, at which point execution
+resumes to perform one-time configuration.  Consult the documentation for
+additional features and modules related to configuring filetypes (particularly
+Treesitter and LSP).
 
 ```{note}
 For per-buffer configuration on every file load, use `ftplugin/` files or
