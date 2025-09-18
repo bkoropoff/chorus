@@ -255,7 +255,10 @@ function M.defer(spec)
     end
   }
 
-  async.pend(function() return fired and async.State.RUN or async.State.DETACH end)
+  state.lazy[cur] = true
+  async.pend(function() return (fired or state.need[cur]) and async.State.RUN or async.State.DETACH end)
+  state.lazy[cur] = nil
+  autocmd.delete(id)
 end
 
 --- Advertise capabilities
