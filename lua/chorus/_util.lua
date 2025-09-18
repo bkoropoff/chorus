@@ -108,9 +108,9 @@ end
 --- @return T
 function M.force(thunk)
   if thunk.value == GUARD then
-    thunk.value = {thunk.func()}
+    thunk.value = M.pack(thunk.func())
   end
-  return unpack(thunk.value)
+  return M.unpack(thunk.value)
 end
 
 --- @param key any
@@ -128,12 +128,12 @@ end
 --- @param ... any
 --- @return any...
 function Thunk:__call(...)
-  local args = { ... }
+  local args = M.pack(...)
   -- Support indexing for method calls
   if args[1] == self then
     args[1] = M.force(self)
   end
-  return M.force(self)(unpack(args))
+  return M.force(self)(M.unpack(args))
 end
 
 return M
