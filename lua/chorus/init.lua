@@ -479,7 +479,9 @@ function M.setup(cfg)
     function(args)
       local data = args.data
       local pack = Pack:for_name(data.spec.name)
-      pack:changed(data.kind, data.path)
+      if pack then
+        pack:changed(data.kind, data.path)
+      end
     end
   }
 
