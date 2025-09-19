@@ -19,12 +19,13 @@ local opts_spec = cspec.compile {
 
 --- Filetype spec
 --- @class chorus.filetype.Spec
---- @field treesitter? boolean Default to installing treesitter for filetypes.  Default: `false`
+--- @field treesitter? boolean | chorus.treesitter.Opts Default to enabling treesitter for filetypes
+--- (or specify precise options).  Default: `false`
 --- @field [string] chorus.filetype.Opts Filetype and options
 --- @field [integer] string Filetype (default options)
 
 local ft_spec = cspec.compile {
-  treesitter = 'boolean',
+  treesitter = { 'boolean', 'table' },
   [cspec.ARGS] = 'string',
   [cspec.CONFIG] = {
     allow_unknown_options = true
@@ -80,11 +81,16 @@ function M.setup(spec)
       }
 
       if subopts.treesitter then
-        if subopts.treesitter == true then
-          chorus.treesitter(ft)
-        else
-          chorus.treesitter { [ft] = subopts.treesitter }
+        local ts = subopts.treesitter
+        if type(ts) == 'string' then
+          ts = { ts }
+        elseif type(ts) == 'boolean' then
+          ts = {}
         end
+        if type(opts.treesitter) == 'table' then
+          ts = vim.tbl_extend('force', opts.treesitter, ts)
+        end
+        chorus.treesitter { [ft] = ts }
       end
 
       if subopts.lsp then
