@@ -136,6 +136,9 @@ local function parse_spec(spec)
       v = { v }
     end
     local subopts, subargs = parser_spec:parse(v, opts)
+    if #subargs == 0 then
+      subargs = ftmap[k] or { k }
+    end
     --- @type chorus.treesitter.Parsers
     local parsers = vim.tbl_extend('keep', subargs, subopts)
     out[k] = parsers
