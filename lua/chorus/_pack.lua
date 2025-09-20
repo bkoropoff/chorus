@@ -25,10 +25,16 @@ local pack_by_url = {}
 local pack_by_name = {}
 
 local function resolve_source(url)
-  if not url:match('^https://') then
+  if not url:match('^[%l%u][%w%a.+-]*:') then
     url = "https://github.com/" .. url
   end
+  while url:match("/$") do
+    url = url:sub(1, #url - 1)
+  end
   local name = url:match("/([^/]*)$")
+  if not name then
+    error("couldn't derive name from url: " .. url)
+  end
   return url, name
 end
 
