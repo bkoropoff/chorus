@@ -113,12 +113,15 @@ filetype {
 ```lua
 -- Misc. filetypes combined into one configuration file
 filetype {
-  -- Default to enabling treesitter for all filetypes mentioned here
-  treesitter = true,
+  -- Default to enabling treesitter without indentation
+  -- for all filetypes mentioned here
+  treesitter = { indent = false },
   "json",
   "toml",
   "yaml",
   cmake = {
+    -- Turn indentation on for this particular filetype
+    treesitter = { indent = true },
     lsp = {
       cmake = {}
     }
