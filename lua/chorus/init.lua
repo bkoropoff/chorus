@@ -219,7 +219,8 @@ end
 --- @class chorus.DeferSpec
 --- @field event string | string[] Autocommand event(s)
 --- @field pattern? (string | string[]) Autocommand pattern(s)
---- @field predicate? fun(vim.api.keyset.create_autocmd.callback_args):boolean Additional predicate to determine match
+--- @field predicate? fun(vim.api.keyset.create_autocmd.callback_args):boolean Additional predicate to
+--- determine match
 
 --- Defer until autocommand event
 ---
@@ -463,7 +464,10 @@ function M.setup(cfg)
       end
     else
       setfenv(source, vim.tbl_extend('force', getfenv(source), prelude))
-      table.insert(tasks, state.reactor:task(source, { name = debug.getinfo(source).name, on_done = source_done }))
+      table.insert(tasks, state.reactor:task(source, {
+        name = debug.getinfo(source).name,
+        on_done = source_done
+      }))
     end
     ::next::
   end
