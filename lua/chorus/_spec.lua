@@ -122,7 +122,7 @@ function M.array(inner)
   end
 end
 
---- @param tbl { key: any, value: chorus.spec.Type }
+--- @param tbl { key: chorus.spec.Type, value: chorus.spec.Type }
 --- @return chorus.spec.Verify
 function M.table(tbl)
   local key = compile_verifier(tbl.key)
