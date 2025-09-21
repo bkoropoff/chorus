@@ -526,7 +526,7 @@ local mt = {}
 
 --- @async
 function mt:__call(specs)
-  M.use(specs)
+  return M.use(specs)
 end
 
 function mt:__index(key)

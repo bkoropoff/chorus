@@ -3,27 +3,32 @@ local util = require 'chorus._util'
 local shada = require 'chorus._shada'
 local async = require 'chorus._async'
 
---- @class (partial) chorus.pack.Pack: chorus.util.Object
+--- @class chorus.pack.Pack: chorus.util.Object
 --- @field name string
+--- @field url string
+--- @field path string
 --- @field add boolean
 --- @field added boolean
 --- @field scheduled boolean
 --- @field version? string
 --- @field error? any
---- @field depends { [string]: chorus.pack.Pack[] }
---- @field private _build async fun(chorus.pack.Pack)
---- @field private _setup async fun()
+--- @field depends { [string]: chorus.pack.Pack }
+--- @field private _build? async fun(chorus.pack.Pack)
+--- @field private _setup? async fun()
 --- @field private _build_run boolean
 --- @field private _setup_run boolean
 --- @field private _setup_start boolean
 M.Pack = util.class()
 
---- @type { [string]: chorus.pack.Pack }
+--- @type { [string]: chorus.pack.Pack? }
 local pack_by_url = {}
 
---- @type { [string]: chorus.pack.Pack }
+--- @type { [string]: chorus.pack.Pack? }
 local pack_by_name = {}
 
+--- @param url string
+--- @return string
+--- @return string
 local function resolve_source(url)
   if not url:match('^[%l%u][%w%a.+-]*:') then
     url = "https://github.com/" .. url
@@ -38,14 +43,17 @@ local function resolve_source(url)
   return url, name
 end
 
+--- @return chorus.pack.Pack?
 function M.Pack:for_url(url)
   return pack_by_url[url]
 end
 
+--- @return chorus.pack.Pack?
 function M.Pack:for_name(name)
   return pack_by_name[name]
 end
 
+--- @return table
 function M.Pack:_shada()
   local pack = shada.pack
   if not pack then
@@ -66,6 +74,8 @@ local shada_keys = {
   path = ''
 }
 
+--- @param key string
+--- @return any
 function M.Pack:__index(key)
   local default = shada_keys[key]
   if default then
@@ -78,6 +88,8 @@ function M.Pack:__index(key)
   return M.Pack[key]
 end
 
+--- @param key string
+--- @param value any
 function M.Pack:__newindex(key, value)
   if shada_keys[key] then
     self:_shada()[key] = value
@@ -99,8 +111,7 @@ function M.Pack:resolve(spec_or_url)
   local url, guess = resolve_source(spec[1])
   local inst = pack_by_url[url]
   if not inst then
-    --- @class (partial) chorus.pack.Pack
-    inst = setmetatable({}, self)
+    inst = setmetatable({}, self) --[[@as chorus.pack.Pack]]
     pack_by_url[url] = inst
     inst.url = url
     inst.name = spec.name or guess
@@ -198,6 +209,7 @@ function M.Pack:resolve(spec_or_url)
   return inst
 end
 
+--- @return vim.pack.Spec
 function M.Pack:to_add()
   return {
     src = self.url,
@@ -225,8 +237,8 @@ end
 
 --- @return boolean
 function M.Pack:needs_setup()
-  return (self._build and not self._build_run) or
-    (self._setup and not self._setup_run)
+  return (self._build ~= nil and not self._build_run) or
+    (self._setup ~= nil and not self._setup_run)
 end
 
 --- @param reactor chorus.async.Reactor
@@ -260,10 +272,12 @@ function M.Pack:setup(reactor)
   })
 end
 
+--- @return boolean
 function M.Pack:depends_ready()
   return vim.iter(self.depends):all(function (_, d) return d:ready() end)
 end
 
+--- @return boolean
 function M.Pack:ready()
   if self.error then
     return true
