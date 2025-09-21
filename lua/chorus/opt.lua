@@ -11,19 +11,31 @@ local util = require 'chorus._util'
 --- @class chorus.opt.Spec Option spec
 --- @field buffer? boolean | integer Set options locally in the given buffer;
 --- `0` or `true` means the current buffer.  This mode uses `vim.bo` and doesn't
---- support methods as detailed below.
+--- support methods as detailed below.  Mutually exclusive with other modes.
+--- @field window? boolean | integer Set options locally in the given window;
+--- `0` or `true` means the current window.  This mode uses `vim.wo` and doesn't
+--- support methods as detailed below.  Mutually exclusive with other modes.
+--- @field scope? "local" | "global" Set global-local options locally or globally
+--- instead of both.  This mode uses `vim.opt_{local,global}` and does support
+--- methods as detailed below.  Mutually exclusive with other modes.
 --- @field [string] any | chorus.opt.Method Options
---- 1. `<key> = <value>`: Performs `vim.opt.<key> = <value>`
+--- 1. `<key> = <value>`: Performs `vim.opt{,_local,_global}.<key> = <value>`
 --- 2. `<key> = { <method> = { <value> ...}, ... }`: Performs
---- `vim.opt.<key>:<method>{ <value> ... }...`
---- 3. `<key> = { set = <value>, ...}`: Performs `vim.opt.<key> = <value>`
+--- `vim.opt{,_local,_global}.<key>:<method>{ <value> ... }...`
+--- 3. `<key> = { set = <value>, ...}`: Performs `vim.opt{,_local,_global}.<key> = <value>`
 --- (alternate syntax)
 
 local special_map = {
-  set = function(k, _, v) vim.opt[k] = v end,
-  prepend = function(_, o, v) o:prepend(v) end,
-  append = function(_, o, v) o:append(v) end,
-  remove = function(_, o, v) o:remove(v) end
+  set = function(k, s, v) s[k] = v end,
+  prepend = function(k, s, v) s[k]:prepend(v) end,
+  append = function(k, s, v) s[k]:append(v) end,
+  remove = function(k, s, v) s[k]:remove(v) end
+}
+
+local scope_map = {
+  ["local"] = vim.opt_local,
+  ["global"] = vim.opt_global,
+  ["default"] = vim.opt
 }
 
 --- Set options
@@ -33,8 +45,14 @@ local special_map = {
 ---
 --- @param opts chorus.opt.Spec Options to set
 function M.set(opts)
+  local window = opts.window
+  local scope = opts.scope
   local buffer = opts.buffer
-  if buffer == 'true' or 'buffer' == 0 then
+  if (window and scope) or (window and buffer) or (scope and buffer) then
+    error("opt.set: multiple modes specified")
+  end
+
+  if buffer == true or buffer == 0 then
     buffer = vim.api.nvim_get_current_buf()
   end
 
@@ -45,8 +63,20 @@ function M.set(opts)
     return
   end
 
+  if window == true or window == 0 then
+    window = vim.api.nvim_get_current_buf()
+  end
+
+  if window then
+    for k, v in pairs(opts) do
+      vim.wo[k] = v
+    end
+    return
+  end
+
+  local so = scope_map[scope or "default"]
+
   for k, v in pairs(opts) do
-    local o = vim.opt[k]
     local is_special = false
     if type(v) == 'table' then
       --- @cast v table
@@ -54,14 +84,13 @@ function M.set(opts)
       for sk, method in pairs(special_map) do
         local sv = m[sk]
         if sv ~= nil then
-          method(k, o, sv)
-          v[sk] = nil
+          method(k, so, sv)
           is_special = true
         end
       end
     end
     if not is_special then
-      vim.opt[k] = v
+      so[k] = v
     end
   end
 end
