@@ -18,10 +18,10 @@ opt {
 }
 ```
 
-Set buffer-local options:
+Setting local options:
 ```lua
 opt {
-  buffer = true,
+  scope = 'local',
   buflisted = true,
   bufhidden = 'delete'
 }
