@@ -25,6 +25,12 @@ local util = require 'chorus._util'
 --- 3. `<key> = { set = <value>, ...}`: Performs `vim.opt{,_local,_global}.<key> = <value>`
 --- (alternate syntax)
 
+local keywords = {
+  buffer = true,
+  window = true,
+  scope = true
+}
+
 local special_map = {
   set = function(k, s, v) s[k] = v end,
   prepend = function(k, s, v) s[k]:prepend(v) end,
@@ -77,6 +83,9 @@ function M.set(opts)
   local so = scope_map[scope or "default"]
 
   for k, v in pairs(opts) do
+    if keywords[k] then
+      goto next
+    end
     local is_special = false
     if type(v) == 'table' then
       --- @cast v table
@@ -92,6 +101,7 @@ function M.set(opts)
     if not is_special then
       so[k] = v
     end
+    ::next::
   end
 end
 
