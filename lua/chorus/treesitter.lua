@@ -78,7 +78,7 @@ local ftmap = {
 --- @class chorus.treesitter.Opts
 --- @field fold? boolean Enable code folding.  Default: `true`
 --- @field highlight? boolean Enable highlighting.  Default: `true`
---- @field indent? boolean Enable indenting.  Default: `true`
+--- @field indent? boolean Enable indenting.  Default: `false`
 
 --- Treesitter parsers and options
 --- @class chorus.treesitter.Parsers: chorus.treesitter.Opts
@@ -118,7 +118,7 @@ local spec_spec = cspec.compile {
 local defaults = {
   fold = true,
   highlight = true,
-  indent = true
+  indent = false
 }
 
 --- @return chorus.treesitter.Parsed
