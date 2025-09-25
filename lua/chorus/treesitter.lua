@@ -132,6 +132,15 @@ local function parse_spec(spec)
   end
 
   for k, v in pairs(rest) do
+    if type(k) == 'table' then
+      rest[k] = nil
+      for _, sk in ipairs(k) do
+        rest[sk] = v
+      end
+    end
+  end
+
+  for k, v in pairs(rest) do
     if type(v) ~= 'table' then
       v = { v }
     end
