@@ -1,4 +1,8 @@
 function update(fargs)
+  -- Ensure all lazy tasks are done so we have a full accounting of active
+  -- packages used by the configuration
+  require 'chorus'._flush()
+
   local autocmd = require 'chorus.autocmd'
 
   local ac = autocmd {
