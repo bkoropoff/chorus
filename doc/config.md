@@ -4,15 +4,17 @@
 
 The main `chorus` module lets you run a collection of self-contained
 configuration files, each independently specifying which packages it requires.
-Required packages from all files are batched into efficient calls to
-`vim.pack.add` so that installation and building occur in parallel.
 
-[`chorus.setup`](chorus.setup), usually invoked from `init.lua`, specifies
-a set of configuration files to run.
+[`chorus.setup`](chorus.setup), usually invoked from `init.lua`, specifies a
+set of configuration files to run.
 
 To make your configuration compact, Chorus injects its modules and functions
-into the environment so you don't need to explicitly `require` them.  This
-can be overridden with the `prelude` option.
+into the environment so you don't need to explicitly `require` them.  This can
+be overridden with the `prelude` option.
+
+Configuration sources are run as concurrent Lua coroutines.  Among other
+features, this permits batching required packages into efficient calls to
+`vim.pack.add` while making as much progress in parallel as possible.
 
 ### Example: `init.lua`
 ```lua
@@ -80,7 +82,7 @@ with [`chorus.need`](chorus.need).
 
 ### Example: `config/colorscheme.lua`
 ```lua
--- Suspend until needed (by file below)
+-- Indicate "colorscheme" is provided by this file
 provide "colorscheme"
 
 -- Install and configure color scheme
@@ -99,7 +101,7 @@ chorus {
   'nvim-tree/nvim-web-devicons'
 }
 
--- Color scheme needs to be set before configuring lualine
+-- Color scheme needs to be configured before configuring lualine
 need "colorscheme"
 
 require 'lualine'.setup {
@@ -208,11 +210,11 @@ autocmd {
 
 If package installation, building, or setup fails, all configuration files
 requiring the package bail out with an error (which can be caught with `pcall`
-if desired) while others proceed, so as much of your configuration is
-remains functional as possible.
+if desired) while others proceed, so as much of your configuration remains
+functional as possible.
 
 ```{warning}
 `vim.pack` doesn't currently support detecting individual package
 installation failures, so any package failing to install will cause all
-configuration files that require packages to bail out
+configuration files that require packages in that batch to bail out
 ```

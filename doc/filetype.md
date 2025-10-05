@@ -20,8 +20,8 @@ treesitter {
   markdown = {
     -- Options
     highlight = true, -- Enable highlighting (default)
-    indent = false -- Disable indenting
-    fold = false -- Disable folding
+    indent = false -- Disable indenting (default)
+    fold = false -- Disable folding (not default)
     -- Specific parsers.  The first is used for the filetype,
     -- additional ones are installed so they are available for injections
     -- (e.g. within code blocks)
@@ -38,7 +38,7 @@ built-in Neovim LSP client for a set of servers. Syntax for individual server
 configuration is nearly the same as `vim.lsp.config`, with these differences:
 
 - The `keymap` key specifies a [`chorus.keymap`](keymap) spec to apply
-upon attaching to a buffer as a shortcut.
+upon attaching to a buffer as a convenience.
 - Global configuration uses the `global` key instead of `*`.
 - Servers configured together can share configuration from a `common` key (in
 addition to inheriting global settings)

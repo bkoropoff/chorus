@@ -2,13 +2,17 @@
 
 Chorus is a declarative, modular configuration system for Neovim. Structure
 your configuration as self-contained files that declare what packages they
-require; Chorus executes them "simultaneously" as coroutines and installs
+require; Chorus executes them concurrently as coroutines and installs
 packages as efficient batches with `vim.pack`.
 
 ```{note}
 `vim.pack` will only become officially available in Neovim 0.12, so a nightly
 build is currently necessary.
 ```
+
+Chorus also includes several handy modules to configure Neovim features such as
+options, keymaps, and LSP servers in a more declarative style.  These can be
+used *a la carte* even if Chorus isn't used for package management.
 
 ## Getting Started
 
@@ -36,7 +40,7 @@ require 'lualine'.setup {
 
 ```
 
-See [Configuration](config) for details.
+See [Configuration Structure](config) for details.
 
 ## Updating
 
