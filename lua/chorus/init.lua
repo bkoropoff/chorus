@@ -114,7 +114,7 @@ end
 --- If the same package is specified multiple times, details will be merged
 --- from all specifications. Certain details may only be specified once or an
 --- error will be raised:
---- - `package` or `version`
+--- - `branch` or `version`
 --- - `build`
 --- - `setup`
 --- @async
