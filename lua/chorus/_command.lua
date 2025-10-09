@@ -10,7 +10,6 @@ function update(fargs)
     'FileType',
     'nvim-pack',
     function(args)
-      vim.opt_local.bufhidden = 'delete'
       local write_ac = vim.api.nvim_get_autocmds {
         event = 'BufWriteCmd',
         buffer = args.buf
